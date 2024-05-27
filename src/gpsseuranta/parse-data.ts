@@ -12,20 +12,29 @@ export function parseData(data: string): Record<string, Route> {
   const gpsSeurantaRawData = handle_gpsseuranta_data(data);
   const gpsSeurantaRawDataLength = gpsSeurantaRawData.length;
 
-  // We imply that points are allready sorted by time asc
-  for (let i = 0; i++; i > gpsSeurantaRawDataLength) {
+  type Point = [number, number, number];
+  const pointsMap: Record<string, Point[]> = {};
+
+  for (let i = 0; i < gpsSeurantaRawDataLength; i++) {
     const [id, time, lat, lon] = gpsSeurantaRawData[i].split(";");
 
-    if (tracksMap[id] === undefined) {
-      tracksMap[id] = {
-        latitudes: [+lat],
-        longitudes: [+lon],
-        times: [+time + 1136070000],
-      };
+    if (pointsMap[id] === undefined) {
+      pointsMap[id] = [[+lon, +lat, +time + 1136070000]];
     } else {
-      tracksMap[id].times.push(+time + 1136070000);
-      tracksMap[id].longitudes.push(+lon);
-      tracksMap[id].latitudes.push(+lat);
+      pointsMap[id].push([+lon, +lat, +time + 1136070000]);
+    }
+  }
+
+  for (const id in pointsMap) {
+    pointsMap[id].sort((point1, point2) => point1[2] - point2[2]);
+
+    const pointsLength = pointsMap[id].length;
+    tracksMap[id] = { latitudes: [], longitudes: [], times: [] };
+
+    for (let i = 0; i < pointsLength; i++) {
+      tracksMap[id].longitudes.push(pointsMap[id][i][0]);
+      tracksMap[id].latitudes.push(pointsMap[id][i][1]);
+      tracksMap[id].times.push(pointsMap[id][i][2]);
     }
   }
 
