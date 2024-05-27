@@ -47,7 +47,7 @@ const sortFunction = (point1: Point, point2: Point) => point1[2] - point2[2];
 function handle_gpsseuranta_data(gpsseuranta_data: string) {
   const points: [string, number, number, number][] = [];
   const rawLines = gpsseuranta_data.split("\n");
-  const rawLinesLength = gpsseuranta_data.length;
+  const rawLinesLength = rawLines.length;
 
   for (let i = 0; i < rawLinesLength; i++) {
     const decodedLines = decode_gpsseuranta(rawLines[i]);
