@@ -10,12 +10,11 @@ type Point = [number, number, number];
  */
 export function parseData(data: string): Record<string, Route> {
   const tracksMap: Record<string, Route> = {};
-
   const gpsSeurantaRawData = handle_gpsseuranta_data(data);
   const gpsSeurantaRawDataLength = gpsSeurantaRawData.length;
 
+  type Point = [number, number, number];
   const pointsMap: Record<string, Point[]> = {};
-
   for (let i = 0; i < gpsSeurantaRawDataLength; i++) {
     const [id, time, lat, lon] = gpsSeurantaRawData[i].split(";");
 
@@ -27,7 +26,7 @@ export function parseData(data: string): Record<string, Route> {
   }
 
   for (const id in pointsMap) {
-    pointsMap[id].sort(sortingFunction);
+    pointsMap[id].sort((point1, point2) => point1[2] - point2[2]);
 
     const pointsLength = pointsMap[id].length;
     tracksMap[id] = { latitudes: [], longitudes: [], times: [] };
@@ -42,19 +41,19 @@ export function parseData(data: string): Record<string, Route> {
   return tracksMap;
 }
 
-const sortingFunction = (point1: Point, point2: Point) => point1[2] - point2[2];
-
-function handle_gpsseuranta_data(Q: string) {
-  var O: string[] = new Array();
-  var S = Q.split("\n");
+function handle_gpsseuranta_data(gpsseuranta_data: string) {
+  const rawLines: string[] = [];
+  var S = gpsseuranta_data.split("\n");
   var M = 1;
   let lastline: string | undefined = undefined;
+
   for (M = S.length - 1; M > -1; M--) {
     if (S[M].length > 10) {
       lastline = S[M];
       break;
     }
   }
+
   if (lastline !== undefined && lastline.length > 30) {
     lastline = lastline.substring(0, 29);
   }
@@ -62,17 +61,16 @@ function handle_gpsseuranta_data(Q: string) {
     lastline = "undef";
   }
   for (M = 0; M < S.length; M++) {
-    var R = S[M].split(".");
     var N = decode_gpsseuranta(S[M]);
     if (N != null) {
-      O = O.concat(N);
+      rawLines.push(...N);
     }
   }
-  return O;
+  return rawLines;
 }
 
 function decode_gpsseuranta(aa: string) {
-  var Q: string[] = new Array();
+  var Q: string[] = [];
   var O = aa.split(".");
   var X = O[0];
   if (O.length < 2) {
