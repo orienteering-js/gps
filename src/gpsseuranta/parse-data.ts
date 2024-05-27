@@ -27,7 +27,7 @@ export function parseData(data: string): Record<string, Route> {
   }
 
   for (const id in pointsMap) {
-    pointsMap[id].sort((point1, point2) => point1[2] - point2[2]);
+    pointsMap[id].sort(sortFunction);
 
     const pointsLength = pointsMap[id].length;
     tracksMap[id] = { latitudes: [], longitudes: [], times: [] };
@@ -42,70 +42,70 @@ export function parseData(data: string): Record<string, Route> {
   return tracksMap;
 }
 
+const sortFunction = (point1: Point, point2: Point) => point1[2] - point2[2];
+
 function handle_gpsseuranta_data(gpsseuranta_data: string) {
-  const rawLines: [string, number, number, number][] = [];
-  var S = gpsseuranta_data.split("\n");
-  var M = 1;
-  let lastline: string | undefined = undefined;
+  const points: [string, number, number, number][] = [];
+  const rawLines = gpsseuranta_data.split("\n");
+  const rawLinesLength = gpsseuranta_data.length;
 
-  for (M = S.length - 1; M > -1; M--) {
-    if (S[M].length > 10) {
-      lastline = S[M];
-      break;
+  for (let i = 0; i < rawLinesLength; i++) {
+    const decodedLines = decode_gpsseuranta(rawLines[i]);
+
+    if (decodedLines != null) {
+      points.push(...decodedLines);
     }
   }
 
-  if (lastline !== undefined && lastline.length > 30) {
-    lastline = lastline.substring(0, 29);
-  }
-  if (lastline !== undefined && lastline.length < 10) {
-    lastline = "undef";
-  }
-  for (M = 0; M < S.length; M++) {
-    var N = decode_gpsseuranta(S[M]);
-    if (N != null) {
-      rawLines.push(...N);
-    }
-  }
-  return rawLines;
+  return points;
 }
 
 const code = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
-function decode_gpsseuranta(aa: string) {
-  var points: [string, number, number, number][] = [];
-  var O = aa.split(".");
-  var id = O[0];
-  if (O.length < 2) {
-    return null;
-  }
-  var Z = O[1].split("_");
-  var lon = +Z[1] / 50000;
-  var lat = +Z[2] / 100000;
-  var time = +Z[0] / 1;
+function decode_gpsseuranta(rawLine: string) {
+  const points: [string, number, number, number][] = [];
+  const splitedLine = rawLine.split(".");
+  const id = splitedLine[0];
+
+  if (splitedLine.length < 2) return null;
+
+  const rawPoint = splitedLine[1].split("_");
+  let lon = +rawPoint[1] / 50000;
+  let lat = +rawPoint[2] / 100000;
+  let time = +rawPoint[0] / 1;
+
   if (isNaN(lat) || isNaN(lon)) {
     lat = 0;
     lon = 0;
   }
+
   if (lon != 0 && lat != 0) {
     points.push([id, time, lat, lon]);
+
     var V = lat;
     var N = lon;
     var S = parseInt(time.toString());
-    for (let k = 2; k < O.length; k++) {
-      if (O[k].length < 3) {
-        k = O.length + 1;
+
+    for (let k = 2; k < splitedLine.length; k++) {
+      if (splitedLine[k].length < 3) {
+        k = splitedLine.length + 1;
       } else {
-        var Y = O[k].split("_");
+        var Y = splitedLine[k].split("_");
+
         if (Y.length < 3) {
-          time = S + code.indexOf(O[k].substring(0, 1)) - 31;
-          lon = (N * 50000 + code.indexOf(O[k].substring(1, 2)) - 31) / 50000;
-          lat = (V * 100000 + code.indexOf(O[k].substring(2, 3)) - 31) / 100000;
+          time = S + code.indexOf(splitedLine[k].substring(0, 1)) - 31;
+          lon =
+            (N * 50000 + code.indexOf(splitedLine[k].substring(1, 2)) - 31) /
+            50000;
+          lat =
+            (V * 100000 + code.indexOf(splitedLine[k].substring(2, 3)) - 31) /
+            100000;
         } else {
           time = S + +Y[0] / 1;
           lon = N + +Y[1] / 50000;
           lat = V + +Y[2] / 100000;
         }
+
         if (!isNaN(lat) && !isNaN(lon)) {
           points.push([id, time, lat, lon]);
           V = lat;
