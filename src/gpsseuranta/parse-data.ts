@@ -1,5 +1,7 @@
 import type { Route } from "@models/route.ts";
 
+type Point = [number, number, number];
+
 /**
  * Parse gps data of an orienteering live event from GPSSeuranta
  *
@@ -12,7 +14,6 @@ export function parseData(data: string): Record<string, Route> {
   const gpsSeurantaRawData = handle_gpsseuranta_data(data);
   const gpsSeurantaRawDataLength = gpsSeurantaRawData.length;
 
-  type Point = [number, number, number];
   const pointsMap: Record<string, Point[]> = {};
 
   for (let i = 0; i < gpsSeurantaRawDataLength; i++) {
@@ -26,7 +27,7 @@ export function parseData(data: string): Record<string, Route> {
   }
 
   for (const id in pointsMap) {
-    pointsMap[id].sort((point1, point2) => point1[2] - point2[2]);
+    pointsMap[id].sort(sortingFunction);
 
     const pointsLength = pointsMap[id].length;
     tracksMap[id] = { latitudes: [], longitudes: [], times: [] };
@@ -40,6 +41,8 @@ export function parseData(data: string): Record<string, Route> {
 
   return tracksMap;
 }
+
+const sortingFunction = (point1: Point, point2: Point) => point1[2] - point2[2];
 
 function handle_gpsseuranta_data(Q: string) {
   var O: string[] = new Array();
