@@ -15,8 +15,9 @@ export function parseData(data: string): Record<string, Route> {
 
   type Point = [number, number, number];
   const pointsMap: Record<string, Point[]> = {};
+
   for (let i = 0; i < gpsSeurantaRawDataLength; i++) {
-    const [id, time, lat, lon] = gpsSeurantaRawData[i].split(";");
+    const [id, time, lat, lon] = gpsSeurantaRawData[i];
 
     if (pointsMap[id] === undefined) {
       pointsMap[id] = [[+lon, +lat, +time + 1136070000]];
@@ -42,7 +43,7 @@ export function parseData(data: string): Record<string, Route> {
 }
 
 function handle_gpsseuranta_data(gpsseuranta_data: string) {
-  const rawLines: string[] = [];
+  const rawLines: [string, number, number, number][] = [];
   var S = gpsseuranta_data.split("\n");
   var M = 1;
   let lastline: string | undefined = undefined;
@@ -69,54 +70,50 @@ function handle_gpsseuranta_data(gpsseuranta_data: string) {
   return rawLines;
 }
 
+const code = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+
 function decode_gpsseuranta(aa: string) {
-  var Q: string[] = [];
+  var points: [string, number, number, number][] = [];
   var O = aa.split(".");
-  var X = O[0];
+  var id = O[0];
   if (O.length < 2) {
     return null;
   }
   var Z = O[1].split("_");
-  var M = +Z[1] / 50000;
-  var U = +Z[2] / 100000;
-  var R = +Z[0] / 1;
-  if (isNaN(U) || isNaN(M)) {
-    U = 0;
-    M = 0;
+  var lon = +Z[1] / 50000;
+  var lat = +Z[2] / 100000;
+  var time = +Z[0] / 1;
+  if (isNaN(lat) || isNaN(lon)) {
+    lat = 0;
+    lon = 0;
   }
-  if (M != 0 && U != 0) {
-    var W = X + ";" + R.toFixed().padStart(12, "0") + ";" + U + ";" + M + "\n";
-    Q.push(W);
-    var T = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-    var V = U;
-    var N = M;
-    var S = parseInt(R.toString());
+  if (lon != 0 && lat != 0) {
+    points.push([id, time, lat, lon]);
+    var V = lat;
+    var N = lon;
+    var S = parseInt(time.toString());
     for (let k = 2; k < O.length; k++) {
       if (O[k].length < 3) {
         k = O.length + 1;
       } else {
         var Y = O[k].split("_");
         if (Y.length < 3) {
-          R = S + T.indexOf(O[k].substring(0, 1)) - 31;
-          M = (N * 50000 + T.indexOf(O[k].substring(1, 2)) - 31) / 50000;
-          U = (V * 100000 + T.indexOf(O[k].substring(2, 3)) - 31) / 100000;
+          time = S + code.indexOf(O[k].substring(0, 1)) - 31;
+          lon = (N * 50000 + code.indexOf(O[k].substring(1, 2)) - 31) / 50000;
+          lat = (V * 100000 + code.indexOf(O[k].substring(2, 3)) - 31) / 100000;
         } else {
-          R = S + +Y[0] / 1;
-          M = N + +Y[1] / 50000;
-          U = V + +Y[2] / 100000;
+          time = S + +Y[0] / 1;
+          lon = N + +Y[1] / 50000;
+          lat = V + +Y[2] / 100000;
         }
-        var W: string;
-        if (isNaN(U) || isNaN(M)) {
-        } else {
-          W =
-            X + ";" + R.toFixed().padStart(12, "0") + ";" + U + ";" + M + "\n";
-          Q.push(W);
-          V = U;
-          N = M;
-          S = R;
+        if (!isNaN(lat) && !isNaN(lon)) {
+          points.push([id, time, lat, lon]);
+          V = lat;
+          N = lon;
+          S = time;
         }
       }
     }
   }
-  return Q;
+  return points;
 }
