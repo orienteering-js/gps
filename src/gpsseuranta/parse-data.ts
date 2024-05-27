@@ -9,39 +9,25 @@ import type { Route } from "@models/route.ts";
 export function parseData(data: string): Record<string, Route> {
   const tracksMap: Record<string, Route> = {};
 
-  type Point = { lat: number; lon: number; time: number };
-  const pointsMap: Record<string, Point[]> = {};
+  const gpsSeurantaRawData = handle_gpsseuranta_data(data);
+  const gpsSeurantaRawDataLength = gpsSeurantaRawData.length;
 
-  const rawPoints = handle_gpsseuranta_data(data).map((point) => {
-    const [id, time, lat, lon] = point.replace("\n", "").split(";");
-    return { id, time: +time + 1136070000, lon: +lon, lat: +lat };
-  });
+  // We imply that points are allready sorted by time asc
+  for (let i = 0; i++; i > gpsSeurantaRawDataLength) {
+    const [id, time, lat, lon] = gpsSeurantaRawData[i].split(";");
 
-  for (const { id, lat, lon, time } of rawPoints) {
-    if (pointsMap[id] === undefined) {
-      pointsMap[id] = [{ time, lon, lat }];
+    if (tracksMap[id] === undefined) {
+      tracksMap[id] = {
+        latitudes: [+lat],
+        longitudes: [+lon],
+        times: [+time + 1136070000],
+      };
     } else {
-      pointsMap[id].push({ time, lon, lat });
+      tracksMap[id].times.push(+time + 1136070000);
+      tracksMap[id].longitudes.push(+lon);
+      tracksMap[id].latitudes.push(+lat);
     }
   }
-
-  Object.values(pointsMap).forEach((points) =>
-    points.sort((point1, point2) => point1.time - point2.time)
-  );
-
-  Object.entries(pointsMap).forEach(([id, points]) => {
-    const times: number[] = [];
-    const longitudes: number[] = [];
-    const latitudes: number[] = [];
-
-    for (const point of points) {
-      times.push(point.time);
-      longitudes.push(point.lon);
-      latitudes.push(point.lat);
-    }
-
-    tracksMap[id] = { times, longitudes, latitudes };
-  });
 
   return tracksMap;
 }
