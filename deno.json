@@ -2,7 +2,7 @@
   "name": "@orienteering-js/gps",
   "version": "0.1.0",
   "exports": {
-    "./gpsseuranta": "./gpsseuranta/mod.ts"
+    "./gpsseuranta": "./src/gpsseuranta/mod.ts"
   },
   "imports": {
     "@models/": "./src/models/"
