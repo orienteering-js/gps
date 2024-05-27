@@ -55,7 +55,7 @@ export function parseInit(initData: string): [MapCalibration, Competitor[]] {
     .map((line) => {
       const rawLine = line.slice(11).split("|");
 
-      if (rawLine.length !== 5) throw new Error("Invalid competitor");
+      if (rawLine.length < 5) throw new Error("Invalid competitor");
 
       return { id: rawLine[0], name: rawLine[3] };
     });
