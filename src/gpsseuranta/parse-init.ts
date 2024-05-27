@@ -41,12 +41,12 @@ export function parseInit(initData: string): [MapCalibration, Competitor[]] {
       point: { x: callibrationArray[2], y: callibrationArray[3] },
     },
     {
-      gps: { lon: callibrationArray[4], lat: callibrationArray[5] },
-      point: { x: callibrationArray[6], y: callibrationArray[7] },
-    },
-    {
       gps: { lon: callibrationArray[8], lat: callibrationArray[9] },
       point: { x: callibrationArray[10], y: callibrationArray[11] },
+    },
+    {
+      gps: { lon: callibrationArray[4], lat: callibrationArray[5] },
+      point: { x: callibrationArray[6], y: callibrationArray[7] },
     },
   ];
 
