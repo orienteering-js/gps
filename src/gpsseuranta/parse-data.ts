@@ -6,74 +6,121 @@ import type { Route } from "@models/route.ts";
  * @param initData The raw string returned in the body of the response to a GET request to https://www.tulospalvelu.fi/gps/<EVENT_ID>/data.lst
  * @returns A map whose keys are competitors ids and values are competitors routes
  */
-export function parseData(dataFile: string): Record<string, Route> {
-  const CODE = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-
+export function parseData(data: string): Record<string, Route> {
   const tracksMap: Record<string, Route> = {};
-  let trackIndex = 0;
 
-  dataFile
-    .trim()
-    .split("\n")
-    .map((s) => s.trim())
-    .flatMap((dataLine: string) => {
-      const returnedArray: [string, number, number, number][] = [];
-      const lineRawArray = dataLine.split(".");
-      lineRawArray.pop();
-      const id = lineRawArray[0];
-      const firstPoint = lineRawArray[1].split("_");
-      const time = +firstPoint[0];
-      const lon = +firstPoint[1] / 50000;
-      const lat = +firstPoint[2] / 100000;
-      returnedArray.push([id, time + 1136070000, lon, lat]);
-      const length = lineRawArray.length;
+  type Point = { lat: number; lon: number; time: number };
+  const pointsMap: Record<string, Point[]> = {};
 
-      for (let i = 2; i < length; i++) {
-        if (lineRawArray[i].includes("_")) {
-          const point = lineRawArray[i].split("_");
-          const newTime = time + +point[0];
-          const newLon = lon + +point[1] / 50000;
-          const newLat = lat + +point[2] / 100000;
+  const rawPoints = handle_gpsseuranta_data(data).map((point) => {
+    const [id, time, lat, lon] = point.replace("\n", "").split(";");
+    return { id, time: +time + 1136070000, lon: +lon, lat: +lat };
+  });
 
-          returnedArray.push([id, newTime + 1136070000, newLon, newLat]);
+  for (const { id, lat, lon, time } of rawPoints) {
+    if (pointsMap[id] === undefined) {
+      pointsMap[id] = [{ time, lon, lat }];
+    } else {
+      pointsMap[id].push({ time, lon, lat });
+    }
+  }
 
-          break;
-        }
+  Object.values(pointsMap).forEach((points) =>
+    points.sort((point1, point2) => point1.time - point2.time)
+  );
 
-        const newTime =
-          time + CODE.indexOf(lineRawArray[i].substring(0, 1)) - 31;
+  Object.entries(pointsMap).forEach(([id, points]) => {
+    const times: number[] = [];
+    const longitudes: number[] = [];
+    const latitudes: number[] = [];
 
-        const newLon =
-          (lon * 50000 + CODE.indexOf(lineRawArray[i].substring(1, 2)) - 31) /
-          50000;
+    for (const point of points) {
+      times.push(point.time);
+      longitudes.push(point.lon);
+      latitudes.push(point.lat);
+    }
 
-        const newLat =
-          (lat * 100000 + CODE.indexOf(lineRawArray[i].substring(2, 3)) - 31) /
-          100000;
-
-        returnedArray.push([id, newTime + 1136070000, newLon, newLat]);
-      }
-
-      return returnedArray;
-    })
-    .sort((point1, point2) => point1[1] - point2[1])
-    .forEach(([id, time, lon, lat]) => {
-      if (tracksMap[id] === undefined) {
-        tracksMap[id] = {
-          latitudes: [],
-          longitudes: [],
-          times: [],
-        };
-
-        trackIndex++;
-      }
-
-      if (tracksMap[id].times.at(-1) === time) return;
-
-      tracksMap[id].latitudes.push(lat);
-      tracksMap[id].times.push(time);
-      tracksMap[id].longitudes.push(lon);
-    });
+    tracksMap[id] = { times, longitudes, latitudes };
+  });
 
   return tracksMap;
+}
+
+function handle_gpsseuranta_data(Q: string) {
+  var O: string[] = new Array();
+  var S = Q.split("\n");
+  var M = 1;
+  let lastline: string | undefined = undefined;
+  for (M = S.length - 1; M > -1; M--) {
+    if (S[M].length > 10) {
+      lastline = S[M];
+      break;
+    }
+  }
+  if (lastline !== undefined && lastline.length > 30) {
+    lastline = lastline.substring(0, 29);
+  }
+  if (lastline !== undefined && lastline.length < 10) {
+    lastline = "undef";
+  }
+  for (M = 0; M < S.length; M++) {
+    var R = S[M].split(".");
+    var N = decode_gpsseuranta(S[M]);
+    if (N != null) {
+      O = O.concat(N);
+    }
+  }
+  return O;
+}
+
+function decode_gpsseuranta(aa: string) {
+  var Q: string[] = new Array();
+  var O = aa.split(".");
+  var X = O[0];
+  if (O.length < 2) {
+    return null;
+  }
+  var Z = O[1].split("_");
+  var M = +Z[1] / 50000;
+  var U = +Z[2] / 100000;
+  var R = +Z[0] / 1;
+  if (isNaN(U) || isNaN(M)) {
+    U = 0;
+    M = 0;
+  }
+  if (M != 0 && U != 0) {
+    var W = X + ";" + R.toFixed().padStart(12, "0") + ";" + U + ";" + M + "\n";
+    Q.push(W);
+    var T = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+    var V = U;
+    var N = M;
+    var S = parseInt(R.toString());
+    for (let k = 2; k < O.length; k++) {
+      if (O[k].length < 3) {
+        k = O.length + 1;
+      } else {
+        var Y = O[k].split("_");
+        if (Y.length < 3) {
+          R = S + T.indexOf(O[k].substring(0, 1)) - 31;
+          M = (N * 50000 + T.indexOf(O[k].substring(1, 2)) - 31) / 50000;
+          U = (V * 100000 + T.indexOf(O[k].substring(2, 3)) - 31) / 100000;
+        } else {
+          R = S + +Y[0] / 1;
+          M = N + +Y[1] / 50000;
+          U = V + +Y[2] / 100000;
+        }
+        var W: string;
+        if (isNaN(U) || isNaN(M)) {
+        } else {
+          W =
+            X + ";" + R.toFixed().padStart(12, "0") + ";" + U + ";" + M + "\n";
+          Q.push(W);
+          V = U;
+          N = M;
+          S = R;
+        }
+      }
+    }
+  }
+  return Q;
 }
