@@ -1,9 +1,18 @@
 import { z } from "zod";
+import type {
+  InternalEventSchemaType,
+  CompetitorSchemaType,
+  SettingsSchemaType,
+  PointSchemaType,
+  CoordinatesSchemaType,
+  MapSchemaType,
+  EventSchemaType,
+} from "./loggator-event.model.ts";
 
 /**
  * Zod schema of event property of returned object of the Loggator event API
  */
-export const internalEventSchema = z.object({
+export const internalEventSchema: InternalEventSchemaType = z.object({
   id: z.number(),
   name: z.string(),
   start_date: z.string().datetime(),
@@ -16,7 +25,7 @@ export const internalEventSchema = z.object({
 /**
  * Zod schema of competitor property of returned object of the Loggator event API
  */
-export const competitorSchema = z.object({
+export const competitorSchema: CompetitorSchemaType = z.object({
   id: z.number(),
   device_id: z.number(),
   name: z.string(),
@@ -34,7 +43,7 @@ export const competitorSchema = z.object({
 /**
  * Zod schema of settings property of returned object of the Loggator event API
  */
-export const settingsSchema = z.object({
+export const settingsSchema: SettingsSchemaType = z.object({
   latitude: z.string(),
   longitude: z.string(),
   zoom: z.string(),
@@ -50,7 +59,7 @@ export const settingsSchema = z.object({
 /**
  * Zod schema of point property of returned object of the Loggator event API
  */
-export const pointSchema = z.object({
+export const pointSchema: PointSchemaType = z.object({
   lat: z.number(),
   lng: z.number(),
 });
@@ -58,7 +67,7 @@ export const pointSchema = z.object({
 /**
  * Zod schema of coordinates property of returned object of the Loggator event API
  */
-export const coordinatesSchema = z.object({
+export const coordinatesSchema: CoordinatesSchemaType = z.object({
   bottomLeft: pointSchema,
   bottomRight: pointSchema,
   topRight: pointSchema,
@@ -68,7 +77,7 @@ export const coordinatesSchema = z.object({
 /**
  * Zod schema of map property of returned object of the Loggator event API
  */
-export const mapSchema = z.object({
+export const mapSchema: MapSchemaType = z.object({
   url: z.string(),
   width: z.number(),
   height: z.number(),
@@ -80,7 +89,7 @@ export const mapSchema = z.object({
 /**
  * Zod schema of returned object of the Loggator event API
  */
-export const eventSchema = z.object({
+export const eventSchema: EventSchemaType = z.object({
   event: internalEventSchema,
   competitors: z.array(competitorSchema),
   tracks: z.string(),
