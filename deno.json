@@ -1,11 +1,14 @@
 {
   "name": "@orienteering-js/gps",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "exports": {
+    "./loggator": "./src/loggator/mod.ts",
     "./gpsseuranta": "./src/gpsseuranta/mod.ts"
   },
   "imports": {
-    "@models/": "./src/models/"
+    "@models/": "./src/models/",
+    "@std/expect": "jsr:@std/expect@^1.0.13",
+    "zod": "npm:zod@^3.24.2"
   },
   "compilerOptions": {
     "verbatimModuleSyntax": true
